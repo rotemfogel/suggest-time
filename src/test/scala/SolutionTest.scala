@@ -12,14 +12,14 @@ class SolutionTest extends AnyFlatSpec {
     )
   }
 
-  "Solution" should "succeed with 60 minute window" in {
-    //    val input1: Array[TimeSlot] = Array(TimeSlot(0, 59), TimeSlot(120, 179))
-    //    val expected1: Array[TimeSlot] = Array(TimeSlot(60, 119), TimeSlot(180, 1439))
-    //    validate(input1, expected1)
-    //  }
-    //  it should "succeed with 30 minute window" in {
+  "Suggest Time" should "succeed with 60 minute window" in {
+    val input1: Array[TimeSlot] = Array(TimeSlot(0, 59), TimeSlot(120, 179))
+    val expected1: Array[TimeSlot] = Array(TimeSlot(60, 119), TimeSlot(180, 1439))
+    validate(input1, expected1, eventLength = 60)
+  }
+  it should "succeed with 30 minute window" in {
     val input2: Array[TimeSlot] = Array(TimeSlot(0, 29), TimeSlot(120, 179))
-    val expected2: Array[TimeSlot] = Array(TimeSlot(30, 119), TimeSlot(150, 1439))
+    val expected2: Array[TimeSlot] = Array(TimeSlot(30, 119), TimeSlot(180, 1439))
     validate(input2, expected2, eventLength = 30)
   }
 }

@@ -15,7 +15,8 @@ object Solution {
       }
     }
 
-    private def value: Int = from + to
+    lazy val range: Int = (to - from) + 1
+    private lazy val value: Int = from + to
 
     @inline override def compare(that: TimeSlot): Int = {
       if (this.value < that.value) -1
@@ -25,23 +26,17 @@ object Solution {
   }
 
 
-  def adjacentFn(list: List[TimeSlot]): List[TimeSlot] = {
+  def collapseAdjacent(list: List[TimeSlot]): List[TimeSlot] = {
     /**
      * calculate the correct accumulator
      */
-    val calculateAcc: (List[TimeSlot], List[TimeSlot]) =>
+    def calculateAcc: (List[TimeSlot], List[TimeSlot]) =>
       List[TimeSlot] = (s: List[TimeSlot], acc: List[TimeSlot]) => {
       if (acc.isEmpty)
-        acc :+ TimeSlot(s.head.from, s.tail.head.to)
+        List(TimeSlot(s.head.from, s.head.to))
       // if last accumulated timeslot is adjacent to current timeslot
-      // TODO: fix for 30 minute window
-      else if (acc.last.to == s.head.from - 1 ||
-        acc.last.to == s.head.to) {
-        val lastTimeSlot: TimeSlot = acc.last
-        val to: Int = if (s.tail.nonEmpty) s.tail.head.from - 1
-        else s.head.to
-        acc.slice(0, acc.length - 1) :+ lastTimeSlot.copy(to = to)
-      }
+      else if (acc.last.to == s.head.from - 1 || acc.last.to == s.head.to)
+        acc.slice(0, acc.length - 1) :+ acc.last.copy(to = s.head.to)
       else acc :+ s.head
     }
 
@@ -76,15 +71,25 @@ object Solution {
    */
   def suggestTime(busyRanges: Array[TimeSlot], eventLength: Int): Array[TimeSlot] = {
     // sort the ranges and get the start hours
-    val start: Array[Int] = busyRanges.map((_: TimeSlot).from)
+    val adjustedRanges: Array[TimeSlot] = busyRanges.flatMap((b: TimeSlot) => {
+      // if range is larger than eventLength, split it to chunks
+      if (b.range > eventLength) {
+        val upperLimit: Int = b.to + 1
+        Range.inclusive(b.from, upperLimit, eventLength)
+          .takeWhile((_: Int) < upperLimit)
+          .map((r: Int) => TimeSlot(r, r + eventLength - 1))
+          .toList
+      } else List(b)
+    })
+    val start: Array[Int] = adjustedRanges.map((_: TimeSlot).from)
     // build the list of available ranges
-    val interim: List[TimeSlot] = Range.inclusive(0, 1440, eventLength)
+    val availableSlots: List[TimeSlot] = Range.inclusive(0, 1440, eventLength)
       .takeWhile((_: Int) < 1440)
       .map((r: Int) => TimeSlot(r, r + eventLength - 1))
       .filterNot((r: TimeSlot) => start.contains(r.from))
       .toList
     // find adjacent time slots
-    adjacentFn(interim)
+    collapseAdjacent(availableSlots)
       .toArray
   }
 }
